@@ -37,11 +37,31 @@ const FoodManagementSystem = () => {
   const [userRole, setUserRole] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [history, setHistory] = useState([]);
   const [notifications, setNotifications] = useState([
     { id: 1, message: "New pickup request available", type: "info" },
     { id: 2, message: "Food expires in 2 hours!", type: "warning" }
   ]);
 
+  const goBack = () => {
+    const prev = [...history];
+    const lastPage = prev.pop();
+    if (lastPage) {
+      setCurrentPage(lastPage);
+      setHistory(prev);
+    }
+  };
+  
+  const BackButton = () =>
+    history.length > 0 ? (
+      <button
+        onClick={goBack}
+        className="fixed top-4 left-4 bg-white p-2 rounded-full border shadow hover:bg-gray-100 z-50"
+      >
+        ← Back
+      </button>
+    ) : null;
+ 
   // Landing Page Component
   const LandingPage = () => (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -78,7 +98,10 @@ const FoodManagementSystem = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
-                onClick={() => setCurrentPage('auth')}
+                onClick={() => {
+                  setHistory(prev => [...prev, currentPage]);
+                  setCurrentPage('auth');
+                }}
                 className="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Get Started Now
@@ -101,6 +124,35 @@ const FoodManagementSystem = () => {
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <Heart className="w-8 h-8 text-red-500 mb-2" />
             <p className="text-sm font-medium">50K+ Meals Saved</p>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="py-20 bg-white border-t border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">About Us</h2>
+          <p className="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+            Our Food Waste Management System is built to solve two urgent problems—food wastage and hunger.
+            It bridges the gap between food donors like households and restaurants and those in need through NGOs and volunteers.
+            Leveraging technology, we ensure safe, timely, and efficient redistribution of excess food, helping build a zero-waste future.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-center">
+            <div className="p-6 bg-green-50 rounded-lg shadow hover:shadow-md transition">
+              <Heart className="mx-auto text-green-600 mb-4 w-10 h-10" />
+              <h3 className="font-semibold text-xl text-gray-900 mb-2">Our Mission</h3>
+              <p className="text-gray-600">To eliminate food waste and hunger by creating a tech-powered food-sharing network.</p>
+            </div>
+            <div className="p-6 bg-green-50 rounded-lg shadow hover:shadow-md transition">
+              <Users className="mx-auto text-green-600 mb-4 w-10 h-10" />
+              <h3 className="font-semibold text-xl text-gray-900 mb-2">Inclusive Community</h3>
+              <p className="text-gray-600">We connect restaurants, households, NGOs, farmers, and volunteers for shared impact.</p>
+            </div>
+            <div className="p-6 bg-green-50 rounded-lg shadow hover:shadow-md transition">
+              <Zap className="mx-auto text-green-600 mb-4 w-10 h-10" />
+              <h3 className="font-semibold text-xl text-gray-900 mb-2">Smart Tech</h3>
+              <p className="text-gray-600">Use of AI-routing, smart storage, and expiry alerts ensures efficiency and safety.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -131,6 +183,7 @@ const FoodManagementSystem = () => {
   // Authentication Component
   const AuthPage = () => (
     <div className="min-h-screen bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center p-4">
+      <BackButton />
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -176,6 +229,12 @@ const FoodManagementSystem = () => {
     <header className="bg-white shadow-sm border-b">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
+          <button 
+            onClick={goBack}
+            className="p-2 rounded-full border shadow hover:bg-gray-100"
+          >
+            ←
+          </button>
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
