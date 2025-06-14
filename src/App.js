@@ -38,10 +38,69 @@ const FoodManagementSystem = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [history, setHistory] = useState([]);
+  const [showTasksMenu, setShowTasksMenu] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, message: "New pickup request available", type: "info" },
     { id: 2, message: "Food expires in 2 hours!", type: "warning" }
   ]);
+
+  // Sample task data for volunteers
+  const volunteerTasks = [
+    {
+      id: 1,
+      restaurant: "Burger Palace",
+      restaurantAddress: "123 Main St, Downtown",
+      ngo: "Hope Foundation",
+      ngoAddress: "456 Oak Ave, Eastside",
+      foodType: "Mixed Meals",
+      quantity: 15,
+      unit: "kg",
+      foodImage: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
+      pickupDistance: 2.3,
+      deliveryDistance: 4.7,
+      totalDistance: 7.0,
+      urgency: "High",
+      pickupTime: "2:00 PM - 3:00 PM",
+      estimatedTime: "45 mins",
+      status: "Available"
+    },
+    {
+      id: 2,
+      restaurant: "Pizza Corner",
+      restaurantAddress: "789 Pizza Blvd, Midtown",
+      ngo: "Children's Shelter",
+      ngoAddress: "321 Pine St, Westside",
+      foodType: "Pizza & Bread",
+      quantity: 8,
+      unit: "kg",
+      foodImage: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop",
+      pickupDistance: 1.8,
+      deliveryDistance: 3.2,
+      totalDistance: 5.0,
+      urgency: "Medium",
+      pickupTime: "4:00 PM - 5:00 PM",
+      estimatedTime: "30 mins",
+      status: "Available"
+    },
+    {
+      id: 3,
+      restaurant: "Healthy Bites",
+      restaurantAddress: "555 Green St, Uptown",
+      ngo: "Senior Care Center",
+      ngoAddress: "777 Elm St, Northside",
+      foodType: "Fresh Vegetables",
+      quantity: 12,
+      unit: "kg",
+      foodImage: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop",
+      pickupDistance: 3.5,
+      deliveryDistance: 2.8,
+      totalDistance: 6.3,
+      urgency: "Low",
+      pickupTime: "6:00 PM - 7:00 PM",
+      estimatedTime: "40 mins",
+      status: "Available"
+    }
+  ];
 
   const goBack = () => {
     const prev = [...history];
@@ -64,7 +123,13 @@ const FoodManagementSystem = () => {
  
   // Landing Page Component
   const LandingPage = () => (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `linear-gradient(rgba(220, 248, 237, 0.8), rgba(183, 247, 205, 0.8))`,
+        backgroundBlendMode: 'overlay'
+      }}
+    >
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -306,6 +371,11 @@ const FoodManagementSystem = () => {
           {menuItems[userRole]?.map((item) => (
             <button
               key={item.id}
+              onClick={() => {
+                if (item.id === 'tasks' && userRole === 'volunteer') {
+                  setShowTasksMenu(!showTasksMenu);
+                }
+              }}
               className="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
             >
               <item.icon className="w-5 h-5 mr-3" />
@@ -403,11 +473,14 @@ const FoodManagementSystem = () => {
             )}
             {userRole === 'volunteer' && (
               <>
-                <button className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <button 
+                  onClick={() => setShowTasksMenu(true)}
+                  className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
                   <MapPin className="w-6 h-6 text-green-600 mx-auto mb-2" />
                   <span className="text-sm font-medium text-green-800">View Tasks</span>
                 </button>
-                <button className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <button className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors" onClick={() => window.location.href = '/tracking.html'}>
                   <Route className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                   <span className="text-sm font-medium text-blue-800">Optimize Route</span>
                 </button>
@@ -446,6 +519,117 @@ const FoodManagementSystem = () => {
         <DashboardHeader />
         <DashboardContent />
       </div>
+      
+      {/* Volunteer Tasks Dropdown Menu */}
+      {showTasksMenu && userRole === 'volunteer' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Available Tasks</h2>
+              <button
+                onClick={() => setShowTasksMenu(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {volunteerTasks.map((task) => (
+                <div key={task.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Food Image */}
+                    <div className="lg:w-48 h-32 rounded-lg overflow-hidden bg-gray-100">
+                      <img 
+                        src={task.foodImage} 
+                        alt={task.foodType}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Food+Image';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Task Details */}
+                    <div className="flex-1 space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-900">{task.foodType}</h3>
+                          <p className="text-lg font-medium text-green-600">{task.quantity} {task.unit}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            task.urgency === 'High' ? 'bg-red-100 text-red-800' :
+                            task.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {task.urgency} Priority
+                          </span>
+                          <p className="text-sm text-gray-600 mt-1">{task.estimatedTime}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Route Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <div className="flex items-center mb-2">
+                            <Store className="w-5 h-5 text-blue-600 mr-2" />
+                            <span className="font-semibold text-blue-900">Pickup from</span>
+                          </div>
+                          <p className="font-medium text-gray-900">{task.restaurant}</p>
+                          <p className="text-sm text-gray-600">{task.restaurantAddress}</p>
+                          <div className="flex items-center mt-2">
+                            <MapPin className="w-4 h-4 text-blue-600 mr-1" />
+                            <span className="text-sm font-medium text-blue-800">{task.pickupDistance} km away</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Pickup: {task.pickupTime}</p>
+                        </div>
+                        
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <div className="flex items-center mb-2">
+                            <Heart className="w-5 h-5 text-green-600 mr-2" />
+                            <span className="font-semibold text-green-900">Deliver to</span>
+                          </div>
+                          <p className="font-medium text-gray-900">{task.ngo}</p>
+                          <p className="text-sm text-gray-600">{task.ngoAddress}</p>
+                          <div className="flex items-center mt-2">
+                            <MapPin className="w-4 h-4 text-green-600 mr-1" />
+                            <span className="text-sm font-medium text-green-800">{task.deliveryDistance} km from pickup</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Total Distance and Action */}
+                      <div className="flex justify-between items-center pt-4 border-t">
+                        <div className="flex items-center text-gray-600">
+                          <Route className="w-5 h-5 mr-2" />
+                          <span className="font-medium">Total Distance: {task.totalDistance} km</span>
+                        </div>
+                        <div className="flex gap-3">
+                          <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            View Route
+                          </button>
+                          <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                            Accept Task
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {volunteerTasks.length === 0 && (
+                <div className="text-center py-12">
+                  <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks available</h3>
+                  <p className="text-gray-600">Check back later for new delivery opportunities!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (

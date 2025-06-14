@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Tracking - Live Location</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .tracking-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        .info-panel {
+            width: 350px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .order-id {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .delivery-status {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-in-transit {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .delivery-info {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .location-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .location-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .pickup-icon {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .delivery-icon {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .driver-icon {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .location-details h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .location-address {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .location-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .volunteer-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .maps-btn {
+            background: #4285f4;
+            color: white;
+        }
+
+        .maps-btn:hover {
+            background: #3367d6;
+            transform: translateY(-1px);
+        }
+
+        .call-btn {
+            background: #34a853;
+            color: white;
+        }
+
+        .call-btn:hover {
+            background: #2e7d32;
+            transform: translateY(-1px);
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .eta-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .eta-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .eta-time {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196f3;
+        }
+
+        .distance {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .pulse-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2196f3;
+            border: 3px solid white;
+            box-shadow: 0 0 0 0 rgba(33, 150, 243, 1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+            }
+        }
+
+        .leaflet-routing-container {
+            display: none;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #f5f5f5;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .tracking-container {
+                flex-direction: column;
+            }
+            
+            .info-panel {
+                width: 100%;
+                height: 40vh;
+                order: 2;
+            }
+            
+            .map-container {
+                height: 60vh;
+                order: 1;
+            }
+
+            .volunteer-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tracking-container">
+        <div class="info-panel">
+            <div class="header">
+                <h1>🚚 Live Tracking</h1>
+                <div class="order-id">Order #DLV-2025-001</div>
+            </div>
+            
+            <div class="delivery-status">
+                <span class="status-badge status-in-transit">📦 In Transit</span>
+            </div>
+            
+            <div class="delivery-info">
+                <div class="location-item">
+                    <div class="location-icon pickup-icon">📍</div>
+                    <div class="location-details">
+                        <h3>Pickup Location</h3>
+                        <div class="location-address">
+                            HotCoffee Restaurant<br>
+                            123 MG Road, Bengaluru<br>
+                            Karnataka 560001
+                        </div>
+                        <div class="location-time">✅ Picked up at 2:30 PM</div>
+                    </div>
+                </div>
+                
+                <div class="location-item">
+                    <div class="location-icon driver-icon">🚗</div>
+                    <div class="location-details">
+                        <h3>Volunteer Driver</h3>
+                        <div class="location-address">
+                            Rajesh Kumar<br>
+                            Phone: +91 98765 43210<br>
+                            Vehicle: KA-01-AB-1234
+                        </div>
+                        <div class="location-time">🔄 Currently en route</div>
+                        <div class="volunteer-actions">
+                            <a href="#" class="action-btn maps-btn" id="googleMapsBtn">
+                                🗺️ Open Maps
+                            </a>
+                            <a href="tel:+919876543210" class="action-btn call-btn">
+                                📞 Call
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="location-item">
+                    <div class="location-icon delivery-icon">🏢</div>
+                    <div class="location-details">
+                        <h3>Delivery Location</h3>
+                        <div class="location-address">
+                            HelpIndia NGOs<br>
+                            456 Koramangala, Bengaluru<br>
+                            Karnataka 560034
+                        </div>
+                        <div class="location-time">⏰ Expected by 3:15 PM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            
+            <div class="map-controls">
+                <button class="control-btn" onclick="centerOnDriver()" title="Center on Driver">🎯</button>
+                <button class="control-btn" onclick="showFullRoute()" title="Show Full Route">🗺️</button>
+                <button class="control-btn" onclick="toggleTraffic()" title="Toggle Traffic">🚦</button>
+            </div>
+            
+            <div class="eta-info">
+                <div>
+                    <div class="eta-text">Estimated Arrival</div>
+                    <div class="eta-time" id="etaTime">12 mins</div>
+                </div>
+                <div>
+                    <div class="eta-text">Distance Remaining</div>
+                    <div class="distance" id="distanceRemaining">2.3 km</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script>
+        // Define locations
+        const locations = {
+            pickup: {
+                name: "HotCoffee Restaurant",
+                address: "123 MG Road, Bengaluru, Karnataka 560001",
+                coords: [12.9716, 77.5946] // MG Road, Bengaluru
+            },
+            delivery: {
+                name: "HelpIndia NGOs",
+                address: "456 Koramangala, Bengaluru, Karnataka 560034",
+                coords: [12.9279, 77.6271] // Koramangala, Bengaluru
+            },
+            driver: {
+                name: "Rajesh Kumar",
+                phone: "+91 98765 43210",
+                vehicle: "KA-01-AB-1234",
+                coords: [12.9500, 77.6000] // Current position between pickup and delivery
+            }
+        };
+
+        // Initialize map
+        const map = L.map('map').setView([12.9500, 77.6000], 13);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Custom icons
+        const pickupIcon = L.divIcon({
+            html: '<div style="background: #4caf50; width: 20px; height: 20px; border-radius: 50% 50% 50% 0; border: 2px solid white; transform: rotate(-45deg);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+            popupAnchor: [0, -20]
+        });
+
+        const deliveryIcon = L.divIcon({
+            html: '<div style="background: #ff9800; width: 20px; height: 20px; border-radius: 50% 50% 50% 0; border: 2px solid white; transform: rotate(-45deg);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+            popupAnchor: [0, -20]
+        });
+
+        const driverIcon = L.divIcon({
+            html: '<div class="pulse-marker"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            popupAnchor: [0, -10]
+        });
+
+        // Add markers
+        const pickupMarker = L.marker(locations.pickup.coords, {icon: pickupIcon})
+            .addTo(map)
+            .bindPopup(`<b>${locations.pickup.name}</b><br>${locations.pickup.address}<br><span style="color: green;">✅ Picked up</span>`);
+
+        const deliveryMarker = L.marker(locations.delivery.coords, {icon: deliveryIcon})
+            .addTo(map)
+            .bindPopup(`<b>${locations.delivery.name}</b><br>${locations.delivery.address}<br><span style="color: orange;">⏰ Destination</span>`);
+
+        const driverMarker = L.marker(locations.driver.coords, {icon: driverIcon})
+            .addTo(map)
+            .bindPopup(`<b>${locations.driver.name}</b><br>Phone: ${locations.driver.phone}<br>Vehicle: ${locations.driver.vehicle}<br><span style="color: blue;">🚗 En Route</span>`);
+
+        // Add routing
+        const routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(locations.pickup.coords[0], locations.pickup.coords[1]),
+                L.latLng(locations.driver.coords[0], locations.driver.coords[1]),
+                L.latLng(locations.delivery.coords[0], locations.delivery.coords[1])
+            ],
+            routeWhileDragging: false,
+            createMarker: function() { return null; }, // Don't create default markers
+            lineOptions: {
+                styles: [
+                    {color: '#4caf50', weight: 6, opacity: 0.3}, // Background line
+                    {color: '#2196f3', weight: 4, opacity: 0.8}  // Main line
+                ]
+            }
+        }).addTo(map);
+
+        // Update Google Maps link
+        function updateGoogleMapsLink() {
+            const origin = `${locations.driver.coords[0]},${locations.driver.coords[1]}`;
+            const destination = `${locations.delivery.coords[0]},${locations.delivery.coords[1]}`;
+            const googleMapsUrl = `https://www.google.com/maps/dir/${origin}/${destination}/@${locations.driver.coords[0]},${locations.driver.coords[1]},15z/data=!3m1!4b1!4m2!4m1!3e0`;
+            
+            document.getElementById('googleMapsBtn').href = googleMapsUrl;
+        }
+
+        // Initialize Google Maps link
+        updateGoogleMapsLink();
+
+        // Simulate real-time tracking
+        let eta = 12;
+        let distance = 2.3;
+        let routeProgress = 0;
+
+        function updateDriverLocation() {
+            routeProgress += 0.02; // Increment progress
+            
+            // Calculate new position along the route (simplified)
+            const startLat = locations.pickup.coords[0];
+            const startLng = locations.pickup.coords[1];
+            const endLat = locations.delivery.coords[0];
+            const endLng = locations.delivery.coords[1];
+            
+            const newLat = startLat + (endLat - startLat) * routeProgress;
+            const newLng = startLng + (endLng - startLng) * routeProgress;
+            
+            // Update driver position
+            locations.driver.coords = [newLat, newLng];
+            driverMarker.setLatLng([newLat, newLng]);
+            
+            // Update ETA and distance
+            eta = Math.max(1, Math.round(12 * (1 - routeProgress)));
+            distance = Math.max(0.1, 2.3 * (1 - routeProgress));
+            
+            document.getElementById('etaTime').textContent = `${eta} mins`;
+            document.getElementById('distanceRemaining').textContent = `${distance.toFixed(1)} km`;
+            
+            // Update Google Maps link with new position
+            updateGoogleMapsLink();
+            
+            // Update route
+            routingControl.setWaypoints([
+                L.latLng(locations.pickup.coords[0], locations.pickup.coords[1]),
+                L.latLng(newLat, newLng),
+                L.latLng(locations.delivery.coords[0], locations.delivery.coords[1])
+            ]);
+            
+            // Check if delivered
+            if (routeProgress >= 0.95) {
+                document.querySelector('.status-badge').textContent = '✅ Delivered';
+                document.querySelector('.status-badge').className = 'status-badge';
+                document.querySelector('.status-badge').style.background = '#e8f5e8';
+                document.querySelector('.status-badge').style.color = '#2e7d32';
+                clearInterval(trackingInterval);
+                
+                // Update driver popup
+                driverMarker.bindPopup(`<b>${locations.driver.name}</b><br>Phone: ${locations.driver.phone}<br>Vehicle: ${locations.driver.vehicle}<br><span style="color: green;">✅ Delivered!</span>`);
+            }
+        }
+
+        // Control functions
+        function centerOnDriver() {
+            map.setView(locations.driver.coords, 15);
+            driverMarker.openPopup();
+        }
+
+        function showFullRoute() {
+            const group = new L.featureGroup([pickupMarker, driverMarker, deliveryMarker]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function toggleTraffic() {
+            // Placeholder for traffic layer toggle
+            console.log('Traffic toggle - would integrate with traffic API');
+        }
+
+        // Start real-time tracking
+        const trackingInterval = setInterval(updateDriverLocation, 3000);
+
+        // Handle responsive layout
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        });
+
+        // Initialize
+        console.log('Delivery tracking with real map routing initialized');
+        console.log('Google Maps integration ready');
+    </script>
+</body>
+</html>
