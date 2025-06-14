@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FoodDonationForm from './components/FoodDonationForm';
 import { 
   User, 
   Store, 
@@ -43,6 +44,7 @@ const FoodManagementSystem = () => {
     { id: 1, message: "New pickup request available", type: "info" },
     { id: 2, message: "Food expires in 2 hours!", type: "warning" }
   ]);
+  const [showDonationForm, setShowDonationForm] = useState(false);
 
   // Sample task data for volunteers
   const volunteerTasks = [
@@ -411,7 +413,6 @@ const FoodManagementSystem = () => {
       restaurant: [
         { label: 'Food Items Listed', value: '156', icon: Package, color: 'green' },
         { label: 'Surplus Reduced', value: '23%', icon: TrendingUp, color: 'blue' },
-        { label: 'Revenue Saved', value: '₹45,230', icon: DollarSign, color: 'yellow' },
         { label: 'Storage Used', value: '67%', icon: BarChart3, color: 'purple' }
       ],
       household: [
@@ -461,7 +462,7 @@ const FoodManagementSystem = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {userRole === 'restaurant' && (
               <>
-                <button className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <button className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"onClick={() => setShowDonationForm(true)}>
                   <Plus className="w-6 h-6 text-green-600 mx-auto mb-2" />
                   <span className="text-sm font-medium text-green-800">Add Food</span>
                 </button>
@@ -631,6 +632,20 @@ const FoodManagementSystem = () => {
         </div>
       )}
       
+      {showDonationForm && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowDonationForm(false)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <FoodDonationForm />
+          </div>
+        </div>
+      )}
+
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
